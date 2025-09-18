@@ -8,37 +8,36 @@ from saboteur import SaboteurGenome
 import matplotlib.pyplot as plt
 
 def train_and_evaluate_genome(genome, X_data, y_data, learning_params, epochs=15, batch_size=32, random_seed=None):
-    """
-    Addestra e valuta un genoma grammaticale.
-    
+    """Train and evaluate a grammar-based genome.
+
     Args:
-        genome: ModelGenome basato su grammatica
-        X_data, y_data: Dati di training
-        learning_params: Parametri di apprendimento
-        epochs: Numero di epoche
-        batch_size: Dimensione del batch
-        random_seed: Seed per la riproducibilità
+        genome: Grammar-based ModelGenome instance
+        X_data, y_data: Training data tensors
+        learning_params: Dict of learning configuration
+        epochs: Number of training epochs
+        batch_size: Mini-batch size
+        random_seed: Optional seed for reproducibility
     """
-    # Imposta seed diverso per ogni valutazione
+    # Set a distinct seed for each evaluation
     if random_seed is not None:
         torch.manual_seed(random_seed)
         np.random.seed(random_seed)
     
     device = torch.device('cuda' if torch.cuda.is_available() else 'cpu')
     
-    # Costruisci il modello PyTorch dalla grammatica
+    # Build PyTorch model from grammar
     try:
         model = genome.build_pytorch_model(X_data.shape[-1], 1)
         model = model.to(device)
         model.train()
     except Exception as e:
-        print(f"Errore nella costruzione del modello: {e}")
+        print(f"Error while building model: {e}")
         return 0.0
     
-    # Controlla se il modello ha parametri addestrabili
+    # Check model has trainable parameters
     trainable_params = list(model.parameters())
     if len(trainable_params) == 0:
-        # Se non ha parametri, restituisci una performance casuale bassa
+        # If no trainable parameters, return a small random baseline performance
         return 0.3 + 0.1 * (torch.rand(1).item() - 0.5)
     
     # Ottimizzatore
@@ -49,7 +48,7 @@ def train_and_evaluate_genome(genome, X_data, y_data, learning_params, epochs=15
     else:
         optimizer = optim.RMSprop(trainable_params, lr=learning_params['learning_rate'])
     
-    # Scheduler per learning rate
+    # Learning rate scheduler
     scheduler = None
     if learning_params.get('lr_scheduler', 'none') != 'none':
         if learning_params['lr_scheduler'] == 'step':
@@ -61,7 +60,7 @@ def train_and_evaluate_genome(genome, X_data, y_data, learning_params, epochs=15
     
     criterion = nn.BCELoss()
     
-    # Training
+    # Training loop
     try:
         for epoch in range(epochs):
             for i in range(0, len(X_data), batch_size):
@@ -69,14 +68,14 @@ def train_and_evaluate_genome(genome, X_data, y_data, learning_params, epochs=15
                 xb = X_data[batch_idx].to(device)
                 yb = y_data[batch_idx].to(device)
                 
-                # Assicurati che le dimensioni siano corrette
+                # Ensure target dimensions are correct
                 if yb.dim() > 1:
                     yb = yb.squeeze()
                     
                 optimizer.zero_grad()
                 out = model(xb)
                 
-                # Assicurati che l'output abbia la forma corretta
+                # Ensure model output shape is correct
                 if out.dim() > 1:
                     out = out.squeeze()
                     
@@ -88,14 +87,14 @@ def train_and_evaluate_genome(genome, X_data, y_data, learning_params, epochs=15
             if scheduler is not None:
                 scheduler.step()
         
-        # Valutazione
+        # Evaluation
         model.eval()
         with torch.no_grad():
             X_eval = X_data.to(device)
             y_eval = y_data.to(device)
             out = model(X_eval)
             
-            # Assicurati che l'output abbia la forma corretta per BCELoss
+            # Ensure correct shape for BCELoss
             if out.dim() > 1:
                 out = out.squeeze()  # Remove extra dimensions
             if y_eval.dim() > 1:
@@ -109,27 +108,34 @@ def train_and_evaluate_genome(genome, X_data, y_data, learning_params, epochs=15
         return accuracy
         
     except Exception as e:
-        print(f"Errore durante il training: {e}")
+        print(f"Error during training: {e}")
         return 0.0
 
 
-class EvolutionarySearch:
-    """Algoritmo di ricerca evolutiva basato su grammatica.
+class _MetricsExportMixin:
+    def export_metrics(self):
+        return {
+            'standard': getattr(self, 'metrics_history', []),
+            'coevolution': getattr(self, 'coevo_metrics_history', []),
+        }
+
+class EvolutionarySearch(_MetricsExportMixin):
+    """Grammar-based evolutionary search algorithm.
 
     Args:
-        input_dim (int): Dimensione dell'input dei campioni.
-        output_dim (int): Dimensione dell'output (es. 1 per binario).
-        population_size (int): Numero di genomi nella popolazione.
-        mutation_rate (float): Probabilità di mutazione per gene.
-        crossover_rate (float): Probabilità di applicare crossover invece di clone+mutate.
-        tournament_size (int): Dimensione del torneo per la selezione.
-        num_eval_runs (int): Numero di valutazioni ripetute per mediare il rumore stocastico.
-        complexity_penalty_coef (float): Penalità di complessità (num_param * coef).
-        diversity_pressure (float): Penalità duplicati (0 disattiva).
-        novelty_weight (float): Peso in [0,1] da sommare alla fitness (fitness_eff = (1-nw)*fitness + nw*novelty_norm).
-        early_stop_fitness (float|None): Soglia di fitness per early stopping se mantenuta.
-        early_stop_patience (int): Generazioni consecutive richieste sopra soglia.
-        top_k_report (int): Numero di architetture uniche migliori da stampare per generazione.
+        input_dim (int): Input feature dimension.
+        output_dim (int): Output dimension (e.g. 1 for binary tasks).
+        population_size (int): Number of genomes in the population.
+        mutation_rate (float): Per-gene mutation probability.
+        crossover_rate (float): Probability to apply crossover vs clone+mutate.
+        tournament_size (int): Tournament size for selection.
+        num_eval_runs (int): Repeated evaluations to average out stochastic noise.
+        complexity_penalty_coef (float): Complexity penalty coefficient (num_params * coef).
+        diversity_pressure (float): Duplicate architecture penalty factor (0 disables).
+        novelty_weight (float): Blend weight for novelty (effective = (1-nw)*fitness + nw*novelty_norm).
+        early_stop_fitness (float|None): Early stopping threshold.
+        early_stop_patience (int): Required consecutive generations above threshold.
+        top_k_report (int): Number of best unique architectures to print per generation.
     """
     def __init__(self, input_dim, output_dim, population_size=30, mutation_rate=0.2, crossover_rate=0.7, tournament_size=7, num_eval_runs=3, complexity_penalty_coef=1e-6, diversity_pressure=0.0, novelty_weight=0.0, early_stop_fitness=None, early_stop_patience=5, top_k_report=3):
         self.input_dim = input_dim
@@ -138,12 +144,12 @@ class EvolutionarySearch:
         self.mutation_rate = mutation_rate
         self.crossover_rate = crossover_rate
         self.tournament_size = tournament_size
-        self.num_eval_runs = num_eval_runs  # Valutazioni multiple per ridurre rumore
-        # Coefficiente per penalizzare modelli troppo grandi (num parametri * coef)
+        self.num_eval_runs = num_eval_runs  # Multiple evaluations to reduce noise
+        # Coefficient to penalize overly large models (num_params * coef)
         self.complexity_penalty_coef = complexity_penalty_coef
-        # Diversità: frazione di penalità applicata ai duplicati dell'architettura (0 = disattivato)
+        # Diversity: fraction penalty applied to repeated architectures (0 = disabled)
         self.diversity_pressure = diversity_pressure
-        # Novità: blending tra fitness originale e misura di novità normalizzata
+        # Novelty: blending between raw fitness and normalized novelty score
         self.novelty_weight = novelty_weight
         # Early stopping
         self.early_stop_fitness = early_stop_fitness
@@ -165,7 +171,7 @@ class EvolutionarySearch:
     # ------------------ Novelty Utilities ------------------
     @staticmethod
     def _levenshtein(a_tokens, b_tokens):
-        """Calcola distanza di Levenshtein tra due liste di token."""
+        """Compute Levenshtein distance between two token sequences."""
         n, m = len(a_tokens), len(b_tokens)
         if n == 0: return m
         if m == 0: return n
@@ -183,7 +189,7 @@ class EvolutionarySearch:
         return dp[n][m]
 
     def _compute_novelty_scores(self, arch_sequences):
-        """Ritorna lista di punteggi di novità (media distanza vs altri)."""
+        """Return list of novelty scores (mean Levenshtein distance to others)."""
         if len(arch_sequences) < 2:
             return [0.0]*len(arch_sequences)
         distances = [[0.0]*len(arch_sequences) for _ in range(len(arch_sequences))]
@@ -387,31 +393,30 @@ class EvolutionarySearch:
         return torch.tensor(X), torch.tensor(y)
 
     def _evaluate_genome_fitness(self, genome, X_data, y_data):
-        """Valuta fitness con multiple valutazioni per ridurre rumore"""
+        """Evaluate genome fitness with multiple runs to reduce stochastic noise."""
         try:
-            # Assicura che l'architettura sia costruita prima della validazione.
-            # In precedenza veniva chiamato is_valid() prima di qualsiasi espansione grammaticale,
-            # causando built_architecture=None e quindi fitness=0 per tutti i genomi.
+            # Ensure architecture is built before validation.
+            # Previously is_valid() was called before grammar expansion, causing
+            # built_architecture=None and fitness=0 for all genomes.
             if genome.built_architecture is None:
                 genome.build_from_grammar()
 
             if not genome.is_valid():
-                # Log minimale per debug (non eccessivo per non inondare l'output)
+                # Minimal debug log (avoid flooding output)
                 return 0.0
             
-            # Esegui num_eval_runs valutazioni con seed diversi
+            # Perform num_eval_runs evaluations with different seeds
             fitness_scores = []
             for eval_run in range(self.num_eval_runs):
-                # Usa un seed diverso per ogni valutazione
+                # Distinct seed per evaluation
                 seed = random.randint(0, 2**31 - 1)
                 perf = train_and_evaluate_genome(genome, X_data, y_data, genome.learning_params, epochs=15, random_seed=seed)
                 fitness_scores.append(perf)
             
-            # Media delle valutazioni per fitness stabile
+            # Average evaluations for stable fitness estimate
             avg_performance = np.mean(fitness_scores)
             
-            # Penalità per complessità: molto piccola per non azzerare fitness.
-            # Parametrizzata via self.complexity_penalty_coef per tuning esterno.
+            # Complexity penalty (small to avoid wiping fitness)
             complexity = sum(p.numel() for p in genome.parameters())
             penalty = self.complexity_penalty_coef * complexity
             
@@ -421,7 +426,7 @@ class EvolutionarySearch:
             return 0.0
 
     def _tournament_selection(self, fitness_scores):
-        """Selezione con torneo più competitivo"""
+        """Tournament selection (competitive)."""
         tournament_indices = random.sample(range(len(self.population)), self.tournament_size)
         tournament_fitness = [fitness_scores[i] for i in tournament_indices]
         winner_idx = tournament_indices[np.argmax(tournament_fitness)]
@@ -432,7 +437,7 @@ class EvolutionarySearch:
         print(f"Population: {self.population_size}, Evaluations per genome: {self.num_eval_runs}")
         X_data, y_data = self._generate_data(sequence_length, num_samples)
         
-        # Inizializza popolazione con genomi grammaticali
+        # Initialize population with grammar-based genomes
         for _ in range(self.population_size):
             genome = ModelGenome.create_random_genome(self.input_dim, self.output_dim)
             self.population.append(genome)
@@ -440,7 +445,7 @@ class EvolutionarySearch:
         for generation in range(generations):
             print(f"\\nGeneration {generation + 1}/{generations}")
             
-            # Valuta fitness con valutazioni multiple
+            # Evaluate fitness with repeated evaluations
             fitness_scores = []
             arch_strings = []
             arch_counts = {}
@@ -452,21 +457,21 @@ class EvolutionarySearch:
                 arch_token_lists.append(arch.split(' -> '))
                 arch_counts[arch] = arch_counts.get(arch, 0) + 1
                 fitness_scores.append(fit)
-                # Stampa campionata + buone soluzioni
+                # Sampled printing + highlight good solutions
                 if i % 5 == 0 or fit > 0.6:
                     print(f"  Genome {i}: fitness = {fit:.4f}, arch = {arch[:50]}...")
 
-            # Applica diversità: penalizza duplicati successivi della stessa architettura
+            # Apply diversity pressure: penalize repeated architectures
             if self.diversity_pressure > 0.0:
                 for i, arch in enumerate(arch_strings):
                     count = arch_counts[arch]
                     if count > 1:
-                        # Riduzione proporzionale a quante copie esistono (più copie -> più penalità)
+                        # Reduction proportional to number of duplicates (more copies -> larger penalty)
                         dup_factor = (count - 1) / count  # in [0,1)
                         penalty_factor = 1.0 - self.diversity_pressure * dup_factor
                         fitness_scores[i] *= max(0.0, penalty_factor)
 
-            # Calcola novità e fonde nella fitness se richiesto
+            # Compute novelty and blend into fitness if enabled
             if self.novelty_weight > 0.0:
                 novelty_scores = self._compute_novelty_scores(arch_token_lists)
                 for i in range(len(fitness_scores)):
@@ -520,7 +525,7 @@ class EvolutionarySearch:
             except Exception as _e_metrics:
                 print(f"  Metrics collection failed: {_e_metrics}")
             
-            # Salva statistiche
+            # Record statistics
             avg_fitness = np.mean(fitness_scores)
             best_fitness = np.max(fitness_scores)
             self.fitness_history.append(avg_fitness)
@@ -529,12 +534,12 @@ class EvolutionarySearch:
             print(f"  Average fitness: {avg_fitness:.4f}")
             print(f"  Best fitness: {best_fitness:.4f}")
             
-            # Mostra la migliore architettura della generazione
+            # Show best architecture of the generation
             best_idx = np.argmax(fitness_scores)
             best_genome = self.population[best_idx]
             print(f"  Best architecture: {best_genome.get_architecture_string()}")
 
-            # Top-K architetture uniche
+            # Top-K unique architectures
             if self.top_k_report > 0:
                 unique = {}
                 for arch, fit in zip(arch_strings, fitness_scores):
@@ -545,7 +550,7 @@ class EvolutionarySearch:
                 for rank, (arch, fit) in enumerate(top_sorted, 1):
                     print(f"    {rank}. {fit:.4f} | {arch}")
 
-            # Early stopping controllo
+            # Early stopping check
             if self.early_stop_fitness is not None:
                 if best_fitness >= self.early_stop_fitness:
                     self._early_stop_counter += 1
@@ -555,31 +560,31 @@ class EvolutionarySearch:
                     print(f"Early stopping triggered (fitness >= {self.early_stop_fitness} for {self.early_stop_patience} consecutive generations).")
                     break
             
-            # Elitismo: mantieni i migliori
+            # Elitism: keep the top 10%
             elite_count = max(1, self.population_size // 10)  # Top 10%
             elite_indices = np.argsort(fitness_scores)[-elite_count:]
             new_population = [self.population[i] for i in elite_indices]
             
-            # Genera nuova popolazione con crossover e mutazioni grammaticali
+            # Generate new population via crossover + grammar mutations
             while len(new_population) < self.population_size:
                 if random.random() < self.crossover_rate and len(self.population) > 1:
-                    # Crossover tra due genitori
+                    # Crossover between two parents
                     parent1 = self._tournament_selection(fitness_scores)
                     parent2 = self._tournament_selection(fitness_scores)
                     child = parent1.crossover(parent2)
                 else:
-                    # Selezione a torneo per mutazione
+                    # Tournament-selected parent for mutation
                     parent = self._tournament_selection(fitness_scores)
                     child = ModelGenome(parent.genes.copy(), parent.learning_params.copy())
                 
-                # Applica mutazioni
+                # Apply mutations
                 child.mutate(self.mutation_rate)
                 
                 new_population.append(child)
             
             self.population = new_population
 
-        # Trova il miglior genoma finale
+        # Evaluate final population
         final_fitness = []
         for g in self.population:
             fit = self._evaluate_genome_fitness(g, X_data, y_data)
@@ -624,7 +629,8 @@ def plot_evolution(fitness_history, best_fitness_history, solver_histories=None)
     plt.tight_layout()
     plt.show()
 
-def export_metrics(self):
+class _MetricsExportMixin:
+    def export_metrics(self):
         return {
             'standard': getattr(self, 'metrics_history', []),
             'coevolution': getattr(self, 'coevo_metrics_history', []),
