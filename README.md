@@ -211,9 +211,9 @@ If you use this framework in research, you can cite it as:
 ```
 @software{notransformers2025,
   title        = {NoTransformers: Grammar-Guided Neuroevolution for Sequence Models},
-  author       = {Your Name},
+  author       = {F.S.},
   year         = {2025},
-  url          = {https://github.com/your/repo}
+  url          = {https://github.com/fabriziosalmi/notransformers}
 }
 ```
 
