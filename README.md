@@ -229,13 +229,5 @@ notransformers/
 └── metrics_coevo.json         # Example output
 A controlled search space reduces invalid architectures and encodes inductive bias toward modular, residual-friendly sequences.
 
-### 🧭 Future Roadmap
-- Multi-objective Pareto fronts (accuracy vs params vs latency)
-- Hall-of-Fame archival + lineage tracking
-- Larger datasets (IMDB / WikiText / synthetic memory tasks)
-- Attention-like or gating primitives integration
-- Parallel fitness via multiprocessing / distributed
-- Visualization dashboard (Streamlit or Lite web UI)
-
 ### 🤝 Contributing
 Ideas, issues, and PRs welcome. Open a discussion for grammar design extensions or new primitive suggestions.
