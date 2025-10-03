@@ -227,6 +227,7 @@ notransformers/
 │
 ├── README.md                  # This file
 └── metrics_coevo.json         # Example output
+```
 A controlled search space reduces invalid architectures and encodes inductive bias toward modular, residual-friendly sequences.
 
 ### 🤝 Contributing
