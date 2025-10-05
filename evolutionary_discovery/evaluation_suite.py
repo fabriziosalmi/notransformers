@@ -127,17 +127,47 @@ def _split_dataset(X: torch.Tensor, y: torch.Tensor, batch_size: int, train_frac
             DataLoader(test_ds, batch_size=batch_size, shuffle=False))
 
 def get_parity_task(seq_len: int, num_samples: int = 1000, batch_size: int = 32):
+    """Generate parity task (binary classification).
+    
+    Args:
+        seq_len: Sequence length
+        num_samples: Number of samples to generate
+        batch_size: Batch size for DataLoaders
+    
+    Returns:
+        tuple: (train_loader, test_loader) with parity classification data
+    """
     X = torch.randint(0, 2, (num_samples, seq_len, 1)).float()
     y = (X.sum(dim=1) % 2).float()  # (num_samples, 1)
     return _split_dataset(X, y, batch_size)
 
 def get_copy_task(seq_len: int, num_samples: int = 1000, batch_size: int = 32):
+    """Generate sequence copy task (regression).
+    
+    Args:
+        seq_len: Sequence length
+        num_samples: Number of samples to generate
+        batch_size: Batch size for DataLoaders
+    
+    Returns:
+        tuple: (train_loader, test_loader) with sequence copy data
+    """
     X = torch.rand(num_samples, seq_len, 1)
     # Flatten the sequence copy into a vector target for simpler regression (batch, seq_len)
     y = X.view(num_samples, seq_len)  # target shape (batch, seq_len)
     return _split_dataset(X, y, batch_size)
 
 def get_pattern_task(seq_len: int = 40, num_samples: int = 1000, batch_size: int = 32):
+    """Generate pattern detection task.
+    
+    Args:
+        seq_len: Sequence length
+        num_samples: Number of samples to generate
+        batch_size: Batch size for DataLoaders
+    
+    Returns:
+        tuple: (train_loader, test_loader) with pattern detection data
+    """
     X = torch.zeros(num_samples, seq_len, 1)
     y = torch.zeros(num_samples, 1)
     pattern = torch.tensor([0.5, 1.0, 1.0, 0.5]).view(4, 1)
