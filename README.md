@@ -185,7 +185,7 @@ optional arguments:
 
 ---
 
-### � Project Architecture
+### 📋 Project Architecture
 
 ```
 notransformers/

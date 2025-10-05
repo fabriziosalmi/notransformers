@@ -234,5 +234,43 @@ class Activation(ComputationalPrimitive):
             return torch.tanh(x)
         elif self.kind == "sigmoid":
             return torch.sigmoid(x)
+        elif self.kind == "gelu":
+            return F.gelu(x)
         else:
             raise ValueError(f"Unknown activation: {self.kind}")
+
+class BatchNorm(ComputationalPrimitive):
+    def __init__(self, feature_dim):
+        super().__init__()
+        self.input_dim = feature_dim
+        self.output_dim = feature_dim
+        self.norm = None
+    
+    def _init_norm(self, actual_feature_dim):
+        """Initialize BatchNorm with actual input dimensions"""
+        if self.norm is None or self.norm.num_features != actual_feature_dim:
+            self.norm = nn.BatchNorm1d(actual_feature_dim)
+            if hasattr(self, '_device'):
+                self.norm = self.norm.to(self._device)
+    
+    def forward(self, x):
+        # x: (batch, features) or (batch, seq, features)
+        original_shape = x.shape
+        if len(x.shape) == 3:  # (batch, seq, features)
+            batch_size, seq_len, features = x.shape
+            x = x.transpose(1, 2)  # (batch, features, seq)
+            self._init_norm(features)
+            x = self.norm(x)
+            x = x.transpose(1, 2)  # (batch, seq, features)
+        else:  # (batch, features)
+            actual_feature_dim = x.shape[-1]
+            self._init_norm(actual_feature_dim)
+            x = self.norm(x)
+        return x
+    
+    def to(self, device):
+        super().to(device)
+        self._device = device
+        if self.norm is not None:
+            self.norm = self.norm.to(device)
+        return self
