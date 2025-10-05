@@ -40,7 +40,7 @@ def train_and_evaluate_genome(genome, X_data, y_data, learning_params, epochs=15
         # If no trainable parameters, return a small random baseline performance
         return 0.3 + 0.1 * (torch.rand(1).item() - 0.5)
     
-    # Ottimizzatore
+    # Optimizer
     if learning_params['optimizer'] == 'adam':
         optimizer = optim.Adam(trainable_params, lr=learning_params['learning_rate'])
     elif learning_params['optimizer'] == 'sgd':

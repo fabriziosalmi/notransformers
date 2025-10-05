@@ -1,8 +1,8 @@
 """
-Neuroevoluzione Grammaticale - ModelGenome
+Grammatical Neuroevolution - ModelGenome
 
-Questo modulo implementa un genoma basato su una sequenza di geni (interi)
-che vengono usati per costruire architetture neurali attraverso una grammatica predefinita.
+This module implements a genome based on a sequence of genes (integers)
+that are used to build neural architectures through a predefined grammar.
 """
 
 import torch
@@ -15,104 +15,104 @@ from grammar import GRAMMAR, expand_grammar
 
 class ModelGenome:
     """
-    Genoma basato su grammatica per la neuroevoluzione.
+    Grammar-based genome for neuroevolution.
     
-    Il genoma contiene:
-    - genes: Lista di interi che guidano le scelte grammaticali
-    - learning_params: Parametri di apprendimento evolutivi
-    - built_architecture: Sequenza di terminali costruita dalla grammatica
+    The genome contains:
+    - genes: List of integers guiding grammatical choices
+    - learning_params: Evolutionary learning parameters
+    - built_architecture: Sequence of terminals built from the grammar
     """
     
     def __init__(self, genes: List[int], learning_params: Dict[str, Any]):
-        self.genes = genes.copy()  # Lista di interi che guidano le scelte
+        self.genes = genes.copy()  # List of integers guiding choices
         self.learning_params = learning_params.copy()
-        self.built_architecture = None  # Cache dell'architettura costruita
-        self.model = None  # Cache del modello PyTorch
+        self.built_architecture = None  # Cache of built architecture
+        self.model = None  # Cache of PyTorch model
         self.input_dim = None
         self.output_dim = None
-        self._param_count_cache = None  # Cache del numero di parametri
+        self._param_count_cache = None  # Cache of parameter count
     
     def build_from_grammar(self, grammar=None, max_expansions=50):
         """
-        Costruisce la sequenza di terminali dalla grammatica usando i geni.
+        Builds the terminal sequence from the grammar using genes.
         
         Returns:
-            List[str]: Sequenza di terminali che rappresenta l'architettura
+            List[str]: Sequence of terminals representing the architecture
         """
         if grammar is None:
             grammar = GRAMMAR
         
-        # Se già costruita, restituisci la cache
+        # If already built, return cache
         if self.built_architecture is not None:
             return self.built_architecture
         
-        # Espandi la grammatica usando i geni
+        # Expand the grammar using genes
         self.built_architecture = expand_grammar(self.genes, grammar, max_expansions)
         return self.built_architecture
     
     def build_pytorch_model(self, input_dim: int, output_dim: int):
         """
-        Costruisce il modello PyTorch dall'architettura grammaticale.
+        Builds the PyTorch model from the grammatical architecture.
         
         Args:
-            input_dim: Dimensione dell'input
-            output_dim: Dimensione dell'output
+            input_dim: Input dimension
+            output_dim: Output dimension
             
         Returns:
-            nn.Module: Modello PyTorch
+            nn.Module: PyTorch model
         """
         self.input_dim = input_dim
         self.output_dim = output_dim
         
-        # Se già costruito, restituisci la cache
+        # If already built, return cache
         if self.model is not None:
             return self.model
         
-        # Ottieni la sequenza di terminali
+        # Get the terminal sequence
         architecture = self.build_from_grammar()
         
         if not architecture:
-            # Architettura vuota, crea un modello lineare semplice
+            # Empty architecture, create a simple linear model
             self.model = nn.Linear(input_dim, output_dim)
             return self.model
         
-        # Costruisci il modello sequenziale
+        # Build the sequential model
         layers = []
         current_dim = input_dim
-        residual_stack = []  # Stack per tenere traccia delle connessioni residue
+        residual_stack = []  # Stack to track residual connections
         
         i = 0
         while i < len(architecture):
             terminal = architecture[i]
             
             if terminal == "Conv1D":
-                # Conv1D per dati sequenziali - necessita trasposizione per (batch, channels, seq_len)
-                out_channels = max(8, current_dim)  # Almeno 8 canali
+                # Conv1D for sequential data - needs transposition for (batch, channels, seq_len)
+                out_channels = max(8, current_dim)  # At least 8 channels
                 conv = nn.Conv1d(current_dim, out_channels, kernel_size=3, padding=1)
                 layers.append(Conv1DWrapper(conv))
                 current_dim = out_channels
                 
             elif terminal == "GRU":
-                # GRU per elaborazione sequenziale
+                # GRU for sequential processing
                 hidden_size = max(8, current_dim)
                 gru = nn.GRU(current_dim, hidden_size, batch_first=True)
                 layers.append(GRUWrapper(gru))
                 current_dim = hidden_size
                 
             elif terminal == "Linear":
-                # Layer lineare - ha bisogno di input 2D, quindi prendiamo l'ultimo timestep
+                # Linear layer - needs 2D input, so take the last timestep
                 out_features = max(8, current_dim // 2) if current_dim > 8 else current_dim
                 linear = nn.Linear(current_dim, out_features)
-                layers.append(SequenceToVector())  # Converte sequenza a vettore
+                layers.append(SequenceToVector())  # Convert sequence to vector
                 layers.append(linear)
                 current_dim = out_features
                 
             elif terminal == "LayerNorm":
-                # Normalizzazione layer
+                # Layer normalization
                 layers.append(nn.LayerNorm(current_dim))
                 
             elif terminal in ["ReLU", "Tanh", "GELU"]:
-                # Funzioni di attivazione
+                # Activation functions
                 if terminal == "ReLU":
                     layers.append(nn.ReLU())
                 elif terminal == "Tanh":
@@ -121,42 +121,42 @@ class ModelGenome:
                     layers.append(nn.GELU())
                     
             elif terminal == "residual":
-                # Connessione residua - salva lo stato corrente
+                # Residual connection - save current state
                 residual_stack.append(len(layers))
                 
             elif terminal == "identity":
-                # Operazione identità - non fare nulla
+                # Identity operation - do nothing
                 pass
             
             i += 1
         
-        # Aggiungi il layer finale per l'output
+        # Add final layer for output
         if current_dim != output_dim:
             layers.append(nn.Linear(current_dim, output_dim))
         
-        # Gestisci le connessioni residue
+        # Handle residual connections
         if residual_stack:
             self.model = ResidualNetwork(layers, residual_stack)
         else:
             self.model = nn.Sequential(*layers)
-        # Invalida param count cache (nuovo modello)
+        # Invalidate param count cache (new model)
         self._param_count_cache = None
         return self.model
     
     def forward(self, x):
-        """Forward pass del modello"""
+        """Forward pass through the model"""
         if self.model is None:
             raise RuntimeError("Model not built. Call build_pytorch_model first.")
         return self.model(x)
     
     def parameters(self):
-        """Restituisce i parametri del modello PyTorch"""
+        """Returns PyTorch model parameters"""
         if self.model is None:
             return []
         return list(self.model.parameters())
 
     def param_count(self):
-        """Numero totale di parametri (cache)."""
+        """Total parameter count (cached)."""
         if self._param_count_cache is None:
             if self.model is None:
                 return 0
@@ -164,40 +164,40 @@ class ModelGenome:
         return self._param_count_cache
     
     def is_valid(self):
-        """Verifica se il genoma è valido"""
+        """Check if genome is valid"""
         return len(self.genes) > 0 and len(self.built_architecture or []) > 0
     
     def mutate(self, mutation_rate=0.1):
         """
-        Muta il genoma modificando alcuni geni e parametri di apprendimento.
+        Mutate the genome by modifying some genes and learning parameters.
         
         Args:
-            mutation_rate: Probabilità di mutazione per ogni gene
+            mutation_rate: Mutation probability for each gene
         """
-        # Muta i geni
+        # Mutate genes
         for i in range(len(self.genes)):
             if random.random() < mutation_rate:
-                self.genes[i] = random.randint(0, 10)  # Nuovo gene casuale
+                self.genes[i] = random.randint(0, 10)  # New random gene
         
-        # Occasionalmente aggiungi o rimuovi geni
+        # Occasionally add or remove genes
         if random.random() < mutation_rate * 0.5:
             if random.random() < 0.5 and len(self.genes) < 50:
-                # Aggiungi un gene
+                # Add a gene
                 self.genes.append(random.randint(0, 10))
             elif len(self.genes) > 5:
-                # Rimuovi un gene
+                # Remove a gene
                 self.genes.pop(random.randint(0, len(self.genes) - 1))
         
-        # Muta i parametri di apprendimento
+        # Mutate learning parameters
         self.mutate_learning_params(mutation_rate)
         
-        # Invalida la cache
+        # Invalidate cache
         self.built_architecture = None
         self.model = None
         self._param_count_cache = None
     
     def mutate_learning_params(self, mutation_rate):
-        """Muta i parametri di apprendimento"""
+        """Mutate learning parameters"""
         if random.random() < mutation_rate:
             self.learning_params['learning_rate'] = random.uniform(0.0001, 0.1)
         
@@ -213,20 +213,20 @@ class ModelGenome:
     @classmethod
     def create_random_genome(cls, input_dim: int, output_dim: int, gene_length=20):
         """
-        Crea un genoma casuale.
+        Create a random genome.
         
         Args:
-            input_dim: Dimensione input (non usata per ora)
-            output_dim: Dimensione output (non usata per ora)
-            gene_length: Lunghezza iniziale della sequenza di geni
+            input_dim: Input dimension (not used for now)
+            output_dim: Output dimension (not used for now)
+            gene_length: Initial gene sequence length
             
         Returns:
-            ModelGenome: Nuovo genoma casuale
+            ModelGenome: New random genome
         """
-        # Genera una sequenza casuale di geni
+        # Generate a random sequence of genes
         genes = [random.randint(0, 10) for _ in range(gene_length)]
         
-        # Parametri di apprendimento casuali
+        # Random learning parameters
         learning_params = {
             'learning_rate': random.uniform(0.001, 0.01),
             'optimizer': random.choice(['adam', 'sgd', 'rmsprop']),
@@ -238,24 +238,24 @@ class ModelGenome:
     
     def crossover(self, other_genome):
         """
-        Crossover con un altro genoma.
+        Crossover with another genome.
         
         Args:
-            other_genome: L'altro genoma per il crossover
+            other_genome: The other genome for crossover
             
         Returns:
-            ModelGenome: Nuovo genoma figlio
+            ModelGenome: New child genome
         """
-        # Crossover dei geni
+        # Gene crossover
         min_length = min(len(self.genes), len(other_genome.genes))
         if min_length < 2:
-            # Se uno dei genomi è troppo piccolo, copia semplicemente
+            # If one genome is too small, simply copy
             child_genes = self.genes.copy()
         else:
             cut_point = random.randint(1, min_length - 1)
             child_genes = self.genes[:cut_point] + other_genome.genes[cut_point:]
         
-        # Crossover dei parametri di apprendimento
+        # Learning parameter crossover
         child_learning_params = {}
         for key in self.learning_params:
             if random.random() < 0.5:
@@ -266,12 +266,12 @@ class ModelGenome:
         return ModelGenome(child_genes, child_learning_params)
     
     def get_architecture_string(self):
-        """Restituisce una rappresentazione leggibile dell'architettura"""
+        """Returns a readable representation of the architecture"""
         architecture = self.build_from_grammar()
         return " -> ".join(architecture) if architecture else "Empty Architecture"
     
     def __str__(self):
-        """Rappresentazione string del genoma"""
+        """String representation of the genome"""
         arch = self.get_architecture_string()
         return f"ModelGenome(genes={len(self.genes)}, arch='{arch}', lr={self.learning_params.get('learning_rate', 'N/A'):.4f})"
     
@@ -280,63 +280,63 @@ class ModelGenome:
 
 
 class SequenceToVector(nn.Module):
-    """Converte sequenza (batch, seq, features) a vettore (batch, features) prendendo l'ultimo timestep"""
+    """Convert sequence (batch, seq, features) to vector (batch, features) by taking the last timestep"""
     
     def forward(self, x):
         if x.dim() == 3:  # (batch, seq, features)
-            return x[:, -1, :]  # Prendi ultimo timestep
-        else:  # Già in formato corretto
+            return x[:, -1, :]  # Take last timestep
+        else:  # Already in correct format
             return x
 
 
 class GRUWrapper(nn.Module):
-    """Wrapper per GRU che restituisce solo l'output finale"""
+    """Wrapper for GRU that returns only the final output"""
     
     def __init__(self, gru):
         super().__init__()
         self.gru = gru
     
     def forward(self, x):
-        # Supporta input 2D (batch, features) convertendolo in sequenza di lunghezza 1.
+        # Support 2D input (batch, features) by converting to sequence of length 1
         if x.dim() == 2:  # (batch, features)
             x = x.unsqueeze(1)  # (batch, 1, features)
         elif x.dim() != 3:
             raise ValueError(f"GRUWrapper expected 2D or 3D tensor, got shape={x.shape}")
 
         output, _ = self.gru(x)
-        # Prendi solo l'ultimo timestep (gestisce anche seq_len=1)
+        # Take only last timestep (handles seq_len=1 too)
         return output[:, -1, :]
 
 
 class Conv1DWrapper(nn.Module):
-    """Wrapper per Conv1D che gestisce la trasposizione dimensionale"""
+    """Wrapper for Conv1D that handles dimensional transposition"""
     
     def __init__(self, conv1d):
         super().__init__()
         self.conv1d = conv1d
     
     def forward(self, x):
-        # Gestisci input 2D espandendolo a 3D se necessario
+        # Handle 2D input by expanding to 3D if necessary
         if x.dim() == 2:
             x = x.unsqueeze(-1)  # (batch, features) -> (batch, features, 1)
         
-        # Input: (batch, seq_len, features) o (batch, features, seq_len)
+        # Input: (batch, seq_len, features) or (batch, features, seq_len)
         # Conv1D expects: (batch, features, seq_len)
         if x.shape[1] != self.conv1d.in_channels:
             x = x.transpose(1, 2)  # (batch, features, seq_len)
         
         x = self.conv1d(x)     # (batch, out_channels, seq_len)
         
-        # Ritorna (batch, out_channels) per compatibilità con Linear
+        # Return (batch, out_channels) for compatibility with Linear
         if x.shape[-1] == 1:
             return x.squeeze(-1)  # (batch, out_channels)
         else:
-            return x.mean(dim=-1)  # Media sui timestep
+            return x.mean(dim=-1)  # Mean over timesteps
 
 
 class ResidualNetwork(nn.Module):
     """
-    Rete che gestisce connessioni residue basate sui marker nella sequenza.
+    Network that handles residual connections based on markers in the sequence.
     """
     
     def __init__(self, layers, residual_positions):
@@ -345,30 +345,30 @@ class ResidualNetwork(nn.Module):
         self.residual_positions = residual_positions
     
     def forward(self, x):
-        residual_values = {}  # Salva i valori per le connessioni residue
+        residual_values = {}  # Save values for residual connections
         
         for i, layer in enumerate(self.layers):
-            # Salva il valore se è una posizione residua
+            # Save value if it's a residual position
             if i in self.residual_positions:
                 residual_values[i] = x.clone()
             
-            # Applica il layer
+            # Apply the layer
             x = layer(x)
             
-            # Se c'è una connessione residua precedente compatibile, sommala
+            # If there's a compatible previous residual connection, add it
             for res_pos in self.residual_positions:
                 if res_pos < i and res_pos in residual_values:
                     residual_val = residual_values[res_pos]
-                    # Controlla compatibilità dimensionale
+                    # Check dimensional compatibility
                     if self._are_compatible(x, residual_val):
                         x = x + residual_val
-                        break  # Una sola connessione residua per layer
+                        break  # Only one residual connection per layer
         
         return x
     
     def _are_compatible(self, tensor1, tensor2):
-        """Verifica se due tensori sono compatibili per la somma"""
-        # Gestisce sia tensori 2D (batch, features) che 3D (batch, seq, features)
+        """Check if two tensors are compatible for addition"""
+        # Handles both 2D (batch, features) and 3D (batch, seq, features) tensors
         if tensor1.dim() != tensor2.dim():
             return False
         
@@ -381,39 +381,39 @@ class ResidualNetwork(nn.Module):
 
 
 if __name__ == "__main__":
-    # Test del sistema
-    print("=== TEST NEUROEVOLUZIONE GRAMMATICALE ===")
+    # System test
+    print("=== GRAMMATICAL NEUROEVOLUTION TEST ===")
     
-    # Crea un genoma casuale
+    # Create a random genome
     genome = ModelGenome.create_random_genome(input_dim=10, output_dim=1)
-    print(f"Genoma creato: {genome}")
-    print(f"Geni: {genome.genes}")
-    print(f"Architettura: {genome.get_architecture_string()}")
+    print(f"Genome created: {genome}")
+    print(f"Genes: {genome.genes}")
+    print(f"Architecture: {genome.get_architecture_string()}")
     
-    # Costruisci il modello PyTorch
+    # Build PyTorch model
     model = genome.build_pytorch_model(input_dim=10, output_dim=1)
-    print(f"\\nModello PyTorch creato:")
+    print(f"\nPyTorch model created:")
     print(model)
     
     # Test forward pass
     x = torch.randn(32, 8, 10)  # (batch, seq_len, features)
     try:
         output = model(x)
-        print(f"\\nOutput shape: {output.shape}")
-        print("✅ Forward pass riuscito!")
+        print(f"\nOutput shape: {output.shape}")
+        print("✅ Forward pass successful!")
     except Exception as e:
-        print(f"❌ Errore nel forward pass: {e}")
+        print(f"❌ Error in forward pass: {e}")
     
-    # Test mutazione
-    print(f"\\nPrima della mutazione: {genome.genes[:10]}...")
+    # Test mutation
+    print(f"\nBefore mutation: {genome.genes[:10]}...")
     genome.mutate(mutation_rate=0.3)
-    print(f"Dopo la mutazione: {genome.genes[:10]}...")
+    print(f"After mutation: {genome.genes[:10]}...")
     
     # Test crossover
     genome2 = ModelGenome.create_random_genome(input_dim=10, output_dim=1)
     child = genome.crossover(genome2)
-    print(f"\\nGenitore 1: {genome.genes[:5]}...")
-    print(f"Genitore 2: {genome2.genes[:5]}...")
-    print(f"Figlio: {child.genes[:5]}...")
+    print(f"\nParent 1: {genome.genes[:5]}...")
+    print(f"Parent 2: {genome2.genes[:5]}...")
+    print(f"Child: {child.genes[:5]}...")
     
-    print("\\n=== TEST COMPLETATO ===")
+    print("\n=== TEST COMPLETED ===")
