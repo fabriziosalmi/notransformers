@@ -4,231 +4,312 @@
 [![PyTorch](https://img.shields.io/badge/PyTorch-2.0%2B-red.svg)](https://pytorch.org/)
 [![License](https://img.shields.io/badge/License-MIT-green.svg)](LICENSE)
 
+> Automatically discover powerful neural architectures without transformers through grammar-guided evolutionary algorithms.
 
 ---
 
+## 📚 Documentation
 
-### 🎯 Project Vision
+**New to NoTransformers?** Start here:
+- **[Getting Started Guide](docs/getting-started.md)** - Installation, quick start, and basic usage
+- **[Examples & Tutorials](docs/examples.md)** - Practical examples and step-by-step tutorials
+
+**Understanding the System:**
+- **[Architecture Guide](docs/architecture.md)** - System design and core components
+- **[Grammar System](docs/grammar.md)** - How grammars define neural architectures
+- **[Evolutionary Algorithms](docs/evolution.md)** - Genetic operators and search mechanisms
+- **[Co-Evolution](docs/coevolution.md)** - Competitive evolution with adversarial patterns
+
+**Reference:**
+- **[API Reference](docs/api-reference.md)** - Complete API documentation
+- **[Troubleshooting](docs/troubleshooting.md)** - Common issues and FAQ
+
+---
+
+## 🎯 Project Vision
 
 **Can we automatically discover powerful neural architectures without relying on Transformers?**
 
 NoTransformers answers this question through **grammar-guided neuroevolution**: instead of manually designing models or fine-tuning pre-trained Transformers, we evolve entire architectures from scratch using evolutionary algorithms constrained by formal grammars.
 
+---
+
 ### 🔬 Technical Approach
 
-Each **genome** is a sequence of integers decoded via production rules into valid neural architectures. The system co-optimizes:
-- **Architecture topology** (Conv1D, GRU, residual connections, normalization)
-- **Learning hyperparameters** (optimizer, learning rate, scheduler, activation functions)
-- **Adversarial robustness** (optional competitive co-evolution)
+NoTransformers combines multiple advanced techniques:
 
-This approach combines:
-- **Genetic Algorithms** for population-based search
-- **Context-Free Grammars** for architectural constraints
-- **Multi-Objective Optimization** (fitness, complexity, novelty, diversity)
-- **Competitive Co-Evolution** (solvers vs adversarial pattern generators)
+- **Grammar-Guided Search**: Context-free grammars ensure valid architectures
+- **Genetic Algorithms**: Population-based optimization for discrete structures
+- **Multi-Objective Optimization**: Balance performance, complexity, and diversity
+- **Competitive Co-Evolution**: Adversarial robustness through evolutionary arms races
+
+**Learn more:**
+- [Grammar System Documentation](docs/grammar.md)
+- [Evolutionary Algorithms Documentation](docs/evolution.md)
+- [Architecture Guide](docs/architecture.md)
 
 ---
 
 ### ✨ Key Features
 
-#### 🧬 **Grammar-Based Architecture Search**
-- Production rules guarantee **valid architectures only**
-- Supports hierarchical building blocks (conv, recurrent, dense)
-- Automatic residual connection management
-- Dynamic shape inference and adapter insertion
+#### 🧬 Grammar-Based Architecture Search
+- **Valid architectures only**: Production rules guarantee well-formed models
+- **Hierarchical composition**: Build complex structures from simple blocks
+- **Automatic shape handling**: Dynamic adapters prevent dimension mismatches
+- **Extensible grammar**: Easy to add new operations and patterns
 
-#### 🛠️ **Rich Primitive Library**
+**Details:** [Grammar System Documentation](docs/grammar.md)
+
+#### 🛠️ Rich Primitive Library
 ```python
 # Computational Primitives
-- Conv1D / Conv1DWrapper  # Sequence convolution with automatic shape handling
-- GRU / GRUWrapper        # Recurrent processing with sequence-to-vector output
-- Linear / Dense blocks   # Fully connected layers with dynamic initialization
-- LayerNorm / BatchNorm   # Normalization primitives
-- ReLU / GELU / Tanh      # Activation functions
+Conv1D / Conv1DWrapper  # Sequence convolution with shape handling
+GRU / GRUWrapper        # Recurrent processing with aggregation
+Linear / Dense          # Fully connected layers
+LayerNorm / BatchNorm   # Normalization primitives
+ReLU / GELU / Tanh      # Activation functions
 
 # Structural Primitives
-- residual               # Skip connections (with automatic adapters)
-- identity              # Passthrough for optional connections
-- SequenceToVector      # Aggregate sequences to fixed-size vectors
+residual                # Skip connections with adapters
+identity               # Passthrough operations
+SequenceToVector       # Sequence aggregation
 ```
 
-#### 🥊 **Competitive Co-Evolution**
-Two populations evolve simultaneously:
-1. **Solvers** (ModelGenome): Neural architectures that solve parity tasks
+**API Reference:** [Primitives Module](docs/api-reference.md#primitives-module)
+
+#### 🥊 Competitive Co-Evolution
+Two populations evolve simultaneously in an adversarial arms race:
+
+1. **Solvers** (ModelGenome): Neural architectures solving tasks
 2. **Saboteurs** (SaboteurGenome): Adversarial pattern generators
 
 **Saboteur Strategies:**
-- `alternating`: 1,0,1,0,... patterns
-- `repeating_chunk`: [1,1,0], [1,1,0], ...
+- `alternating`: Simple 1,0,1,0,... patterns
+- `repeating_chunk`: Repeating subsequences
 - `mostly_zeros`: Sparse positive examples
 - `mostly_ones`: Sparse negative examples
-- `edge_ones`: Active boundaries with quiet centers
+- `edge_ones`: Boundary-focused patterns
 
-Solvers are evaluated against saboteur-generated sequences, creating an **evolutionary arms race** that promotes robust architectures.
+**Learn more:** [Co-Evolution Guide](docs/coevolution.md)
 
-#### 📊 **Comprehensive Metrics & Analytics**
+#### 📊 Comprehensive Metrics & Analytics
 
-**Standard Evolution Metrics:**
-```json
-{
-  "generation": 10,
-  "fitness_mean": 0.823,
-  "fitness_median": 0.841,
-  "fitness_std": 0.092,
-  "arch_entropy": 1.847,
-  "unique_architectures": 12,
-  "param_mean": 2341.5,
-  "param_std": 892.3,
-  "depth_mean": 7.2,
-  "novelty_mean": 0.412
-}
-```
+Track evolution progress with detailed metrics:
 
-**Co-Evolution Metrics:**
-```json
-{
-  "solver_avg": 0.612,
-  "solver_best": 0.891,
-  "saboteur_avg": 0.388,
-  "saboteur_best": 0.742,
-  "solver_arch_entropy": 1.523,
-  "pattern_type_counts": {"alternating": 8, "edge_ones": 5},
-  "noise_level_mean": 0.156,
-  "pattern_length_mean": 5.2
-}
-```
+**Standard Evolution:**
+- Fitness statistics (mean, median, best, std)
+- Architecture diversity (entropy, unique count)
+- Model complexity (parameters, depth)
+- Novelty scores (Levenshtein distance)
 
-#### 🎛️ **Advanced Evolutionary Mechanisms**
+**Co-Evolution:**
+- Solver vs Saboteur fitness
+- Pattern type distribution
+- Arms race dynamics
+- Population diversity
 
-1. **Novelty Search**
-   - Levenshtein distance-based architecture diversity
-   - Blended fitness: `(1-w)*performance + w*novelty`
-   - Prevents premature convergence
+**Example:** [Metrics Analysis](docs/examples.md#example-4-export-and-analyze-metrics)
 
-2. **Diversity Pressure**
-   - Penalizes duplicate architectures proportionally
-   - Formula: `penalty = 1 - pressure * (copies-1)/copies`
-   - Encourages exploration of unique solutions
+#### 🎛️ Advanced Evolutionary Mechanisms
 
-3. **Early Stopping**
-   - Configurable fitness threshold
-   - Patience mechanism (consecutive generations)
-   - Prevents overfitting to evolutionary noise
+1. **Novelty Search**: Levenshtein distance-based architecture diversity
+2. **Diversity Pressure**: Penalizes duplicate architectures
+3. **Early Stopping**: Configurable fitness threshold with patience
+4. **Top-K Reporting**: Tracks best unique architectures
+5. **Parameter Caching**: Efficient complexity computation
+6. **Multi-Objective**: Balance performance, size, and novelty
 
-4. **Top-K Reporting**
-   - Tracks best unique architectures per generation
-   - Enables multi-solution analysis
-   - Supports Pareto front approximation
-
-5. **Parameter Count Caching**
-   - Avoids redundant model instantiation
-   - Speeds up complexity penalty computation
-   - Efficient memory usage
+**Deep dive:** [Evolutionary Algorithms Documentation](docs/evolution.md)
 
 ---
 
-### 🚀 Installation & Quick Start
+### 🚀 Quick Start
 
-#### Prerequisites
+#### Installation
+
 ```bash
-# Python 3.8+
-python --version
+# Clone the repository
+git clone https://github.com/fabriziosalmi/notransformers.git
+cd notransformers
 
-# Core dependencies
+# Install dependencies
 pip install torch numpy matplotlib
 
-# Optional: Graphviz for architecture visualization
-# macOS
-brew install graphviz
-pip install graphviz
-
-# Ubuntu/Debian
-sudo apt-get install graphviz
+# Optional: Install Graphviz for visualization
 pip install graphviz
 ```
 
+For detailed installation instructions, see the **[Getting Started Guide](docs/getting-started.md)**.
+
 #### Basic Usage
 
-**1. Standard Evolution (Parity Task)**
+**Standard Evolution:**
 ```bash
 cd evolutionary_discovery
 python main.py --population 50 --generations 40
 ```
 
-**2. Competitive Co-Evolution**
+**Competitive Co-Evolution:**
 ```bash
-python main.py --coevolution --population 40 --generations 20 --metrics-json coevo.json
+python main.py --coevolution --population 40 --generations 20
 ```
 
-**3. High-Diversity Search with Early Stopping**
+**Export Metrics:**
 ```bash
-python main.py \
-  --population 100 \
-  --generations 50 \
-  --metrics-json diversity_run.json
+python main.py --population 100 --generations 50 --metrics-json results.json
 ```
 
-#### Command-Line Interface
+For more examples, see **[Examples & Tutorials](docs/examples.md)**.
+
+---
+
+### 📋 Project Structure
 
 ```
-usage: main.py [-h] [--coevolution] [--generations G] [--population P] [--metrics-json PATH]
+notransformers/
+├── docs/                           # 📚 Documentation
+│   ├── getting-started.md         # Installation and quick start
+│   ├── architecture.md            # System architecture and design
+│   ├── grammar.md                 # Grammar system deep dive
+│   ├── evolution.md               # Evolutionary algorithms
+│   ├── coevolution.md             # Competitive co-evolution
+│   ├── api-reference.md           # Complete API documentation
+│   ├── examples.md                # Examples and tutorials
+│   └── troubleshooting.md         # Common issues and FAQ
+│
+├── evolutionary_discovery/         # 🧬 Core modules
+│   ├── main.py                    # CLI entry point
+│   ├── evolution.py               # Evolutionary algorithms
+│   ├── genome.py                  # Neural architecture genome
+│   ├── grammar.py                 # Context-free grammar
+│   ├── saboteur.py                # Adversarial patterns
+│   ├── primitives.py              # Computational primitives
+│   ├── evaluation_suite.py        # Extended benchmarks
+│   ├── visualize.py               # Architecture visualization
+│   └── test_evolution_exact.py    # Unit tests
+│
+├── README.md                       # This file
+├── LICENSE                         # MIT License
+└── metrics_coevo.json             # Example output
 
-Grammar-based Neuroevolution with optional Competitive Co-Evolution
+```
 
-optional arguments:
-  -h, --help           Show this help message
-  --coevolution        Enable competitive Solvers vs Saboteurs mode
-  --generations G      Number of evolutionary generations (default: 100)
-  --population P       Population size (default: 100)
-  --metrics-json PATH  Export per-generation metrics to JSON file
+**For detailed information on each module, see the [API Reference](docs/api-reference.md).**
+
+---
+
+### 🎓 Learning Path
+
+**Beginners:**
+1. Read [Getting Started](docs/getting-started.md)
+2. Try the [Quick Start](#quick-start)
+3. Explore [Examples & Tutorials](docs/examples.md)
+
+**Intermediate:**
+1. Understand [Architecture Guide](docs/architecture.md)
+2. Study [Grammar System](docs/grammar.md)
+3. Learn [Evolutionary Algorithms](docs/evolution.md)
+
+**Advanced:**
+1. Master [Co-Evolution](docs/coevolution.md)
+2. Review [API Reference](docs/api-reference.md)
+3. Extend the system with custom components
+
+---
+
+### 💡 Use Cases
+
+**Research:**
+- Neural architecture search (NAS)
+- Evolutionary computation studies
+- Adversarial robustness research
+- Grammar-based generation systems
+
+**Education:**
+- Learning about evolutionary algorithms
+- Understanding neural architecture design
+- Exploring genetic programming
+- Studying competitive co-evolution
+
+**Development:**
+- Automated model discovery
+- Architecture optimization
+- Hyperparameter search
+- Robust model development
+
+---
+
+### 🤝 Contributing
+
+We welcome contributions! Here's how you can help:
+
+**Bug Reports & Feature Requests:**
+- Open an issue on GitHub
+- Provide detailed descriptions and examples
+- Include error messages and system info
+
+**Code Contributions:**
+1. Fork the repository
+2. Create a feature branch
+3. Make your changes
+4. Add tests if applicable
+5. Submit a pull request
+
+**Ideas for Contributions:**
+- New computational primitives
+- Alternative selection mechanisms
+- Custom grammar structures
+- Additional benchmark tasks
+- Documentation improvements
+- Performance optimizations
+
+**Discussion:**
+- Share experiments and results
+- Propose new features
+- Ask questions
+- Help other users
+
+For more details, see the [Contributing Guidelines](CONTRIBUTING.md) (if available) or open a discussion.
+
+---
+
+### 📄 License
+
+This project is licensed under the MIT License - see the [LICENSE](LICENSE) file for details.
+
+---
+
+### 📬 Contact & Support
+
+- **Issues**: [GitHub Issues](https://github.com/fabriziosalmi/notransformers/issues)
+- **Discussions**: [GitHub Discussions](https://github.com/fabriziosalmi/notransformers/discussions)
+- **Documentation**: [docs/](docs/)
+
+---
+
+### 🌟 Acknowledgments
+
+NoTransformers builds upon research in:
+- Grammatical Evolution (O'Neill & Ryan, 2001)
+- Neural Architecture Search (Zoph & Le, 2017)
+- Competitive Co-Evolution (Hillis, 1990)
+- Novelty Search (Lehman & Stanley, 2011)
+
+---
+
+### 📚 Citation
+
+If you use NoTransformers in your research, please cite:
+
+```bibtex
+@software{notransformers2024,
+  title = {NoTransformers: Grammar-Guided Neuroevolution Framework},
+  author = {Salmi, Fabrizio},
+  year = {2024},
+  url = {https://github.com/fabriziosalmi/notransformers}
+}
 ```
 
 ---
 
-### 📋 Project Architecture
-
-```
-notransformers/
-├── evolutionary_discovery/
-│   ├── main.py                # CLI entry point
-│   ├── evolution.py           # Core evolutionary algorithms
-│   │   ├── EvolutionarySearch      # Main evolution loop
-│   │   ├── train_and_evaluate_genome
-│   │   ├── plot_evolution          # Visualization utilities
-│   │   └── _MetricsExportMixin     # JSON export functionality
-│   │
-│   ├── genome.py              # Neural architecture genome
-│   │   ├── ModelGenome             # Grammar-based genome representation
-│   │   ├── Conv1DWrapper           # Shape-adaptive Conv1D
-│   │   ├── GRUWrapper              # GRU with sequence aggregation
-│   │   └── SequenceToVector        # Mean pooling over time
-│   │
-│   ├── grammar.py             # Context-free grammar definitions
-│   │   ├── GRAMMAR                 # Production rules dictionary
-│   │   ├── expand_grammar          # Gene-to-architecture decoder
-│   │   └── print_grammar_info      # Grammar introspection
-│   │
-│   ├── saboteur.py            # Adversarial pattern generation
-│   │   └── SaboteurGenome          # Adversarial sequence genome
-│   │
-│   ├── primitives.py          # Low-level computational primitives
-│   │   ├── ComputationalPrimitive  # Base class
-│   │   ├── Conv1D, Linear, GRU     # Layer implementations
-│   │   └── Activation functions
-│   │
-│   ├── evaluation_suite.py    # Extended benchmarking suite
-│   │   ├── train_and_test_model
-│   │   ├── Parity benchmarks
-│   │   ├── Copy task
-│   │   └── Synthetic regression
-│   │
-│   ├── visualize.py           # Graphviz architecture rendering
-│   └── test_evolution_exact.py # Unit tests
-│
-├── README.md                  # This file
-└── metrics_coevo.json         # Example output
-```
-A controlled search space reduces invalid architectures and encodes inductive bias toward modular, residual-friendly sequences.
-
-### 🤝 Contributing
-Ideas, issues, and PRs welcome. Open a discussion for grammar design extensions or new primitive suggestions.
+**Ready to start?** Head to the [Getting Started Guide](docs/getting-started.md) and begin evolving your first neural architectures!
