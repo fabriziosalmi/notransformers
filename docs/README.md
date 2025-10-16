@@ -11,18 +11,18 @@
 ## 📚 Documentation
 
 **New to NoTransformers?** Start here:
-- **[Getting Started Guide](docs/getting-started.md)** - Installation, quick start, and basic usage
-- **[Examples & Tutorials](docs/examples.md)** - Practical examples and step-by-step tutorials
+- **[Getting Started Guide](getting-started.md)** - Installation, quick start, and basic usage
+- **[Examples & Tutorials](examples.md)** - Practical examples and step-by-step tutorials
 
 **Understanding the System:**
-- **[Architecture Guide](docs/architecture.md)** - System design and core components
-- **[Grammar System](docs/grammar.md)** - How grammars define neural architectures
-- **[Evolutionary Algorithms](docs/evolution.md)** - Genetic operators and search mechanisms
-- **[Co-Evolution](docs/coevolution.md)** - Competitive evolution with adversarial patterns
+- **[Architecture Guide](architecture.md)** - System design and core components
+- **[Grammar System](grammar.md)** - How grammars define neural architectures
+- **[Evolutionary Algorithms](evolution.md)** - Genetic operators and search mechanisms
+- **[Co-Evolution](coevolution.md)** - Competitive evolution with adversarial patterns
 
 **Reference:**
-- **[API Reference](docs/api-reference.md)** - Complete API documentation
-- **[Troubleshooting](docs/troubleshooting.md)** - Common issues and FAQ
+- **[API Reference](api-reference.md)** - Complete API documentation
+- **[Troubleshooting](troubleshooting.md)** - Common issues and FAQ
 
 ---
 
@@ -44,9 +44,9 @@ NoTransformers combines multiple advanced techniques:
 - **Competitive Co-Evolution**: Adversarial robustness through evolutionary arms races
 
 **Learn more:**
-- [Grammar System Documentation](docs/grammar.md)
-- [Evolutionary Algorithms Documentation](docs/evolution.md)
-- [Architecture Guide](docs/architecture.md)
+- [Grammar System Documentation](grammar.md)
+- [Evolutionary Algorithms Documentation](evolution.md)
+- [Architecture Guide](architecture.md)
 
 ---
 
@@ -58,7 +58,7 @@ NoTransformers combines multiple advanced techniques:
 - **Automatic shape handling**: Dynamic adapters prevent dimension mismatches
 - **Extensible grammar**: Easy to add new operations and patterns
 
-**Details:** [Grammar System Documentation](docs/grammar.md)
+**Details:** [Grammar System Documentation](grammar.md)
 
 #### 🛠️ Rich Primitive Library
 ```python
@@ -75,7 +75,7 @@ identity               # Passthrough operations
 SequenceToVector       # Sequence aggregation
 ```
 
-**API Reference:** [Primitives Module](docs/api-reference.md#primitives-module)
+**API Reference:** [Primitives Module](api-reference.md#primitives-module)
 
 #### 🥊 Competitive Co-Evolution
 Two populations evolve simultaneously in an adversarial arms race:
@@ -90,7 +90,7 @@ Two populations evolve simultaneously in an adversarial arms race:
 - `mostly_ones`: Sparse negative examples
 - `edge_ones`: Boundary-focused patterns
 
-**Learn more:** [Co-Evolution Guide](docs/coevolution.md)
+**Learn more:** [Co-Evolution Guide](coevolution.md)
 
 #### 📊 Comprehensive Metrics & Analytics
 
@@ -108,7 +108,7 @@ Track evolution progress with detailed metrics:
 - Arms race dynamics
 - Population diversity
 
-**Example:** [Metrics Analysis](docs/examples.md#example-4-export-and-analyze-metrics)
+**Example:** [Metrics Analysis](examples.md#example-4-export-and-analyze-metrics)
 
 #### 🎛️ Advanced Evolutionary Mechanisms
 
@@ -119,7 +119,7 @@ Track evolution progress with detailed metrics:
 5. **Parameter Caching**: Efficient complexity computation
 6. **Multi-Objective**: Balance performance, size, and novelty
 
-**Deep dive:** [Evolutionary Algorithms Documentation](docs/evolution.md)
+**Deep dive:** [Evolutionary Algorithms Documentation](evolution.md)
 
 ---
 
@@ -139,7 +139,7 @@ pip install torch numpy matplotlib
 pip install graphviz
 ```
 
-For detailed installation instructions, see the **[Getting Started Guide](docs/getting-started.md)**.
+For detailed installation instructions, see the **[Getting Started Guide](getting-started.md)**.
 
 #### Basic Usage
 
@@ -159,7 +159,7 @@ python main.py --coevolution --population 40 --generations 20
 python main.py --population 100 --generations 50 --metrics-json results.json
 ```
 
-For more examples, see **[Examples & Tutorials](docs/examples.md)**.
+For more examples, see **[Examples & Tutorials](examples.md)**.
 
 ---
 
@@ -194,25 +194,25 @@ notransformers/
 
 ```
 
-**For detailed information on each module, see the [API Reference](docs/api-reference.md).**
+**For detailed information on each module, see the [API Reference](api-reference.md).**
 
 ---
 
 ### 🎓 Learning Path
 
 **Beginners:**
-1. Read [Getting Started](docs/getting-started.md)
+1. Read [Getting Started](getting-started.md)
 2. Try the [Quick Start](#quick-start)
-3. Explore [Examples & Tutorials](docs/examples.md)
+3. Explore [Examples & Tutorials](examples.md)
 
 **Intermediate:**
-1. Understand [Architecture Guide](docs/architecture.md)
-2. Study [Grammar System](docs/grammar.md)
-3. Learn [Evolutionary Algorithms](docs/evolution.md)
+1. Understand [Architecture Guide](architecture.md)
+2. Study [Grammar System](grammar.md)
+3. Learn [Evolutionary Algorithms](evolution.md)
 
 **Advanced:**
-1. Master [Co-Evolution](docs/coevolution.md)
-2. Review [API Reference](docs/api-reference.md)
+1. Master [Co-Evolution](coevolution.md)
+2. Review [API Reference](api-reference.md)
 3. Extend the system with custom components
 
 ---
@@ -283,7 +283,7 @@ This project is licensed under the MIT License - see the [LICENSE](LICENSE) file
 
 - **Issues**: [GitHub Issues](https://github.com/fabriziosalmi/notransformers/issues)
 - **Discussions**: [GitHub Discussions](https://github.com/fabriziosalmi/notransformers/discussions)
-- **Documentation**: [docs/](docs/)
+- **Documentation**: [Documentation](./)
 
 ---
 
@@ -312,4 +312,4 @@ If you use NoTransformers in your research, please cite:
 
 ---
 
-**Ready to start?** Head to the [Getting Started Guide](docs/getting-started.md) and begin evolving your first neural architectures!
+**Ready to start?** Head to the [Getting Started Guide](getting-started.md) and begin evolving your first neural architectures!
